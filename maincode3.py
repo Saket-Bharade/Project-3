@@ -2,51 +2,54 @@ import cv2
 import os
 import numpy as np
 from pathlib import Path
+import matplotlib.pyplot as plt
 
-# Step 1: Object Masking
+# Function to visualize intermediate results for one image
+def visualize_intermediate_results(image_path):
+    # Read the original image
+    original_image = cv2.imread(image_path)
 
-def object_masking(input_dir, output_dir):
-    # Create the output directory if it doesn't exist
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
 
-    # Iterate through the images in the input directory
-    for file_name in os.listdir(input_dir):
-        if file_name.endswith(('.jpg', '.jpeg', '.png')):
-            image_path = os.path.join(input_dir, file_name)
+    # Apply GaussianBlur to reduce noise
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-            # Read the image
-            image = cv2.imread(image_path)
+    # Apply Canny edge detection
+    edges = cv2.Canny(blurred, 50, 150)
 
-            # Convert the image to grayscale
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Find contours
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Apply GaussianBlur to reduce noise and improve edge detection
-            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Create an empty mask
+    mask = np.zeros_like(edges)
 
-            # Apply Canny edge detection
-            edges = cv2.Canny(blurred, 50, 150)
+    # Draw contours on the mask
+    cv2.drawContours(mask, contours, -1, (255), thickness=cv2.FILLED)
 
-            # Find contours
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Bitwise AND to extract the PCB from the background
+    masked_image = cv2.bitwise_and(original_image, original_image, mask=mask)
 
-            # Create an empty mask
-            mask = np.zeros_like(edges)
-
-            # Draw contours on the mask
-            cv2.drawContours(mask, contours, -1, (255), thickness=cv2.FILLED)
-
-            # Bitwise AND to extract the PCB from the background
-            motherboard = cv2.bitwise_and(image, image, mask=mask)
-
-            # Save the masked image to the output directory
-            masked_image_path = os.path.join(output_dir, file_name)
-            cv2.imwrite(masked_image_path, motherboard)
+    # Plot the results
+    plt.figure(figsize=(15, 5))
+    
+    plt.subplot(141), plt.imshow(cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)), plt.title('Original Image')
+    plt.subplot(142), plt.imshow(edges, cmap='gray'), plt.title('Canny Edge Detection')
+    plt.subplot(143), plt.imshow(mask, cmap='gray'), plt.title('Contours Mask')
+    plt.subplot(144), plt.imshow(cv2.cvtColor(masked_image, cv2.COLOR_BGR2RGB)), plt.title('Masked Image')
+    
+    plt.show()
 
 # Specify your dataset path
 dataset_path = "C:\\Users\\saket\\Documents\\GitHub\\Project-3\\Project 3 Data\\data"
 
-# Apply object masking to the training set images
-train_images_dir = os.path.join(dataset_path, "train", "images")
-masked_train_dir = os.path.join(dataset_path, "masked_train")
+# Specify the image path
+image_path = os.path.join(dataset_path, r"C:\Users\saket\Documents\GitHub\Project-3\Project 3 Data\motherboard_image.JPEG")
 
-object_masking(train_images_dir, masked_train_dir)
+# Visualize intermediate results for one image
+visualize_intermediate_results(image_path)
+
+
+
+
+
