@@ -27,3 +27,4 @@ for i, r in enumerate(results):
     im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
     im.save(save_path)
     print(f"Image saved to: {save_path}")
+
